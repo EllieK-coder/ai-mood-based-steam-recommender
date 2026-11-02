@@ -141,6 +141,9 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - **Fail fast, fail friendly.** The agent checks once at startup that Ollama is reachable and exits with a clear message if not. During a chat, a lost connection is caught, the unanswered message is removed from the history, and the user can simply retry. Empty input is ignored in code rather than sent to the model, which would otherwise invent a reply.
 - **Prompt rules are not guarantees.** The system prompt said "never name a game the tool didn't return", but when the router wrongly said NO, the model still invented games the user doesn't own (Factorio, Kerbal Space Program). The fix was in code: a keyword check before the LLM router, and a guardrail that runs the pipeline itself if the model skips the tool.
 - **Give the model facts, or it fills gaps with fiction.** When the final pick only saw game names, it described SimCity 4 as a "sci-fi metropolis" to match the request. Passing each candidate's top Steam tags grounded the descriptions, and adding theme tags (Space, Sci-fi, Colony Sim) let "sci-fi base-building" find RimWorld.
+- **Retrieve, then rerank.** Tag searches are cheap but imprecise (an ant-colony game appeared under "Space"). The top 10 candidates are reranked using their real tag votes, so 10 extra API calls make results precise without fetching details for thousands of games.
+- **Real data finds bugs tests can't.** The mood list said `Base Building`, but Steam's tag is `Base-Building`, so the tag was silently dropped from every profile. And a temporary `MIN_SCORE = 1.1` left in one file quietly emptied every result in another: temporary changes need a revert checklist.
+
 ## Roadmap
 
 **Goal for v1:** the user describes a mood in their own words ("I want to relax", "I need to release some anger"), and the agent recommends 1–3 games from their own library, prioritising the forgotten backlog. ✅ Done.
@@ -174,13 +177,13 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - [x] **Store engine:** `fetch_tag` (with timeout) and `rank_store`: search SteamSpy for the profile's top tags, exclude owned games and games with few reviews, rank by tag overlap with rating as tie-breaker (7 tests)
 - [x] **Store fallback:** when no owned game passes the threshold, use the store engine in `recommend_from_library`, with a fixed intro in code saying the games aren't owned
 - [x] Guardrails for the new path: store results passed to the final pick with their tags, API failures and timeouts handled
-- [ ] Rerank store candidates: fetch real tag votes for the top 10 (SteamSpy `appdetails`) and score them with `score_game`, so weakly tagged games drop
-- [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
-- [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
-- [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
 - [x] **Store engine:** `fetch_tag` (with timeout) and `rank_store`: search SteamSpy for the profile's top tags, exclude owned games and games with few reviews, rank by tag overlap with rating as tie-breaker (7 tests)
 - [x] **Store fallback:** when no owned game passes the threshold, search SteamSpy and exclude games the user already owns
 - [x] Guardrails for the new path: store results passed to the final pick with their tags, API failures and timeouts handled
+- [x] **Rerank store candidates:** fetch real tag votes for the top 10 (SteamSpy `appdetails`) and score them with `score_game`; if the details calls fail, fall back to the unreranked top 5
+- [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
+- [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
+- [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
 - [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
 - [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
 - [ ] `get_game_details` (price, short description) from the Steam store

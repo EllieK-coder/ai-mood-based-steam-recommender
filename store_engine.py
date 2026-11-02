@@ -1,3 +1,6 @@
+from mood_engine import score_game, MIN_SCORE
+
+
 MIN_REVIEWS = 500   # ignore games with fewer reviews than this
 
 
@@ -17,7 +20,6 @@ def rank_store(tag_results, profile, owned, top_n=10):
     """
     candidates = {}   # appid -> info about that game
 
-    # 1. go through every searched tag and every game in its list
     for tag, games in tag_results.items():
         weight = profile[tag]
         for game in games.values():
@@ -41,13 +43,35 @@ def rank_store(tag_results, profile, owned, top_n=10):
             candidates[appid]["match"] += weight
             candidates[appid]["tags"].append(tag)
 
-    # 2. normalise: 1.0 means the game was in every searched list
     total_weight = sum(profile[tag] for tag in tag_results)
     for game in candidates.values():
         game["match"] = round(game["match"] / total_weight, 2)
 
-    # 3. best match first; rating breaks ties
     ranked = sorted(candidates.values(), key=lambda g: (g["match"], g["rating"]), reverse=True)
 
-    # 4. keep the top ones
     return ranked[:top_n]
+
+
+def rerank_store(candidates, details, profile, top_n=5):
+    """
+    candidates: the result of rank_store
+    details:    {appid: tags dict}, e.g. {294100: {"Colony Sim": 4108, ...}}
+    profile:    the mood profile
+    """
+    reranked = []
+    for game in candidates:
+        tags = details.get(game["appid"])
+        if not isinstance(tags, dict):
+            continue
+
+        match = score_game({"tags": tags}, profile)
+        if match < MIN_SCORE:
+            continue
+
+        new = dict(game)
+        new["match"] = match
+        new["tags"] = sorted(tags, key=tags.get, reverse=True)[:5]
+        reranked.append(new)
+
+    reranked.sort(key=lambda g: (g["match"], g["rating"]), reverse=True)
+    return reranked[:top_n]

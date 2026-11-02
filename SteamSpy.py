@@ -5,8 +5,13 @@
 # 4. turn the response into Python data with .json()
 # 5. print it, then figure out how to print just the first 5 game names
 import json
+import time
 
 import requests
+from library.data.http_errors import raise_for_status
+
+from mood_engine import load_library
+from store_engine import rank_store
 
 
 def fetch_tag(tag: str) -> dict:
@@ -18,6 +23,19 @@ def fetch_tag(tag: str) -> dict:
     )
     response.raise_for_status()
     return response.json()
+
+
+def fetch_appdetails(appid: int) -> dict:
+    """Return SteamSpy's details for one game, including its tags with vote counts."""
+    response = requests.get(
+        "https://steamspy.com/api.php",
+        params={"request": "appdetails", "appid": appid},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 
 def find_games_by_tag(tag: str) -> str:
     """Find Steam games that have a given tag, such as Roguelike or Relaxing."""
@@ -35,9 +53,9 @@ def find_games_by_tag(tag: str) -> str:
     return str(results)
 
 if __name__ == "__main__":
-    import time
-    from mood_engine import load_library
-    from store_engine import rank_store
+    details = fetch_appdetails(294100)   # RimWorld
+    print(details["name"])
+    print(details["tags"])
 
     profile = {"Space": 1.0, "Colony Sim": 0.9, "Base Building": 0.8}
     owned = {game["appid"] for game in load_library()}
