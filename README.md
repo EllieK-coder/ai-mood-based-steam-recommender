@@ -184,9 +184,8 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
 - [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
 - [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
-- [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
-- [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
-- [ ] `get_game_details` (price, short description) from the Steam store
+
+
 
 ### After v2
 
