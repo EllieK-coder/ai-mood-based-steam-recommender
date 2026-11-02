@@ -185,12 +185,12 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - [x] **Rerank store candidates:** fetch real tag votes for the top 10 (SteamSpy `appdetails`) and score them with `score_game`; if the details calls fail, fall back to the unreranked top 5
 - [x] **`find_new_games(mood)`** as a second tool: mood → profile from all mood tags → store search and rerank → final pick, with a fixed intro in code
 - [x] **Owned or new:** the library is the default; new-game requests ("something new", "to buy", "don't own") go to the store, guaranteed by a keyword check in code when the model skips the tool
-- [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
 
 
 ### After v2
 
 **Recommendation quality**
+- [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
 - [ ] Treat themes as requirements: when the user names a setting (space, fantasy), filter candidates to games with that tag instead of relying on the prompt
 - [ ] Negative weights (e.g. `Horror: -0.8` for "relax") to push down games with the wrong feel
 - [ ] Handle different editions of the same game (e.g. Skyrim and Skyrim Special Edition)
