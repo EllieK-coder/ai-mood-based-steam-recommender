@@ -35,9 +35,18 @@ def find_games_by_tag(tag: str) -> str:
     return str(results)
 
 if __name__ == "__main__":
-    data = fetch_tag("Colony Sim")
-    print("games:", len(data))
-    first = next(iter(data.values()))
-    print(first)
+    import time
+    from mood_engine import load_library
+    from store_engine import rank_store
 
+    profile = {"Space": 1.0, "Colony Sim": 0.9, "Base Building": 0.8}
+    owned = {game["appid"] for game in load_library()}
 
+    tag_results = {}
+    for tag in profile:
+        tag_results[tag] = fetch_tag(tag)
+        print(f"{tag}: {len(tag_results[tag])} games")
+        time.sleep(1)   # be polite to SteamSpy's rate limit
+
+    for game in rank_store(tag_results, profile, owned):
+        print(game["match"], game["rating"], game["price"], "-", game["name"], game["tags"])
