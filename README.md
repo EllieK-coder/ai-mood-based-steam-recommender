@@ -188,7 +188,6 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
 
 
-
 ### After v2
 
 **Recommendation quality**
