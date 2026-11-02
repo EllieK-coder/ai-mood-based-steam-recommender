@@ -151,10 +151,32 @@ def pick_games(mood_text, candidates):
     )
 
     return response.message.content
+def find_new_games(mood: str) -> str:
+    """Suggest new games from the Steam store that the user does not own yet.
+    Use this ONLY when the user explicitly asks for new games, games they don't own,
+    or something to buy."""
+    try:
+        raw = load_library()
+    except FileNotFoundError:
+        return "Your library hasn't been built yet. Run build_library.py first."
+
+    profile = mood_to_profile(mood, MOOD_TAGS)
+    if not profile:
+        return "I couldn't work out what kind of game fits that mood."
+
+    owned = {game["appid"] for game in raw}
+    store = find_store_games(profile, owned)
+    if not store:
+        return "I couldn't find anything in the store for that mood right now."
+
+    intro = "Here are some games from the Steam store you don't own yet:\n\n"
+    return intro + pick_store_games(mood, store)
+
+
 
 def recommend_from_library(mood: str) -> str:
     """Recommend games the user already owns that fit their mood, for example
-    'I want to relax' or 'I'm angry and want to smash something'."""
+    'I want to relax' or 'I'm angry and want to smash something'. Use this by default."""
     try:
         raw = load_library()
         library = clean_library(raw)
@@ -166,7 +188,8 @@ def recommend_from_library(mood: str) -> str:
     profile = mood_to_profile(mood, tags)
     if not profile:
         return "I couldn't work out what kind of game fits that mood."
-    ranked = []   # TEMP: force the store fallback
+
+    ranked = rank_library(library, profile)
     if not ranked:
         owned = {game["appid"] for game in raw}
         store = find_store_games(profile, owned)
@@ -176,7 +199,32 @@ def recommend_from_library(mood: str) -> str:
         return intro + pick_store_games(mood, store)
 
     return pick_games(mood, ranked)
+
+
+def find_new_games(mood: str) -> str:
+    """Suggest new games from the Steam store that the user does not own yet.
+    Use this ONLY when the user explicitly asks for new games, games they don't own,
+    or something to buy."""
+    try:
+        raw = load_library()
+    except FileNotFoundError:
+        return "Your library hasn't been built yet. Run build_library.py first."
+
+    profile = mood_to_profile(mood, MOOD_TAGS)
+    if not profile:
+        return "I couldn't work out what kind of game fits that mood."
+
+    owned = {game["appid"] for game in raw}
+    store = find_store_games(profile, owned)
+    if not store:
+        return "I couldn't find anything in the store for that mood right now."
+
+    intro = "Here are some games from the Steam store you don't own yet:\n\n"
+    return intro + pick_store_games(mood, store)
+
+
 if __name__ == "__main__":
     print(recommend_from_library("I had a long day and just want to relax"))
     print(recommend_from_library("I'm so angry I want to smash something"))
     print(recommend_from_library("asdfgh"))
+    print(find_new_games("I want a cozy farming game"))
