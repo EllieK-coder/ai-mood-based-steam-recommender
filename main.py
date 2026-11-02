@@ -22,6 +22,7 @@ messages = [
             "If the user only greets you or makes small talk, reply naturally without using any tools. "
             "Never name a specific game unless it came from the recommend_from_library tool in this conversation. "
             "If the user seems to want a game but you haven't used the tool, ask them how they're feeling instead."
+            "Write in plain text, without Markdown formatting such as ** or numbered lists. "
         ),
     }
 ]

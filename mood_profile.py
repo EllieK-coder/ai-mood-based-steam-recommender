@@ -3,6 +3,7 @@ import json
 import ollama
 
 from mood_engine import load_library, clean_library, all_tags, rank_library, BACKLOG_MINUTES
+from store_profile import find_store_games, pick_store_games
 
 MODEL = "qwen2.5:7b"
 DEBUG = False
@@ -115,11 +116,12 @@ def pick_games(mood_text, candidates):
 
     lines = []
     for game in top:
+        tags = ", ".join(game["tags"])
         if game["playtime"] < BACKLOG_MINUTES:
-            lines.append(f"- {game['name']} | owned but never or barely played")
+            lines.append(f"- {game['name']} | owned but never or barely played | tags: {tags}")
         else:
             hours = round(game["playtime"] / 60, 1)
-            lines.append(f"- {game['name']} | played {hours} hours")
+            lines.append(f"- {game['name']} | played {hours} hours | tags: {tags}")
 
     candidate_text = "\n".join(lines)
     if DEBUG:
@@ -128,13 +130,15 @@ def pick_games(mood_text, candidates):
     system = (
         "You are a friendly assistant that recommends Steam games the player already owns. "
         "Recommend 1 to 3 games ONLY from the list you are given. "
+        "Each game's tags are listed. Describe a game only using its tags and what it is generally known for; never invent features. "
+        "If a game does not match part of the request (for example a theme), say so honestly. "
+        "If the user asks for a specific theme or setting (for example space or sci-fi), only recommend games whose tags include that theme. "
         "For each game, write 1-2 sentences on why it fits the player's mood. "
         "If a game is marked as never or barely played, mention that they already own it "
         "and haven't really tried it yet. "
         "Do not mention scores, hours or other numbers from the list. "
         "If any game marked as never or barely played fits the mood, include at least one of them in your picks. "
         "Write in plain text, without Markdown formatting such as ** or numbered lists."
-
     )
 
     response = ollama.chat(
@@ -148,12 +152,12 @@ def pick_games(mood_text, candidates):
 
     return response.message.content
 
-
 def recommend_from_library(mood: str) -> str:
     """Recommend games the user already owns that fit their mood, for example
     'I want to relax' or 'I'm angry and want to smash something'."""
     try:
-        library = clean_library(load_library())
+        raw = load_library()
+        library = clean_library(raw)
     except FileNotFoundError:
         return "Your library hasn't been built yet. Run build_library.py first."
 
@@ -165,10 +169,14 @@ def recommend_from_library(mood: str) -> str:
 
     ranked = rank_library(library, profile)
     if not ranked:
-        return "Nothing in your library fits that mood right now."
+        owned = {game["appid"] for game in raw}
+        store = find_store_games(profile, owned)
+        if not store:
+            return "Nothing in your library fits that mood right now, and I couldn't find anything in the store either."
+        intro = "Nothing in your library fits that mood right now, but here are some games from the Steam store you don't own yet:\n\n"
+        return intro + pick_store_games(mood, store)
 
     return pick_games(mood, ranked)
-
 
 if __name__ == "__main__":
     print(recommend_from_library("I had a long day and just want to relax"))
