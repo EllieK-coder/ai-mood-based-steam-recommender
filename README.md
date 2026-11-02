@@ -143,6 +143,8 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - **Give the model facts, or it fills gaps with fiction.** When the final pick only saw game names, it described SimCity 4 as a "sci-fi metropolis" to match the request. Passing each candidate's top Steam tags grounded the descriptions, and adding theme tags (Space, Sci-fi, Colony Sim) let "sci-fi base-building" find RimWorld.
 - **Retrieve, then rerank.** Tag searches are cheap but imprecise (an ant-colony game appeared under "Space"). The top 10 candidates are reranked using their real tag votes, so 10 extra API calls make results precise without fetching details for thousands of games.
 - **Real data finds bugs tests can't.** The mood list said `Base Building`, but Steam's tag is `Base-Building`, so the tag was silently dropped from every profile. And a temporary `MIN_SCORE = 1.1` left in one file quietly emptied every result in another: temporary changes need a revert checklist.
+- **The last model to touch the text decides what the user sees.** The store tool added "games you don't own yet" in code, but the chat model then rewrote the answer and dropped it (and added Markdown back). When a tool runs, its answer is now shown directly, so guarantees made in code survive. Tool arguments are fixed in code too: the user's latest words are added to the mood the model passes, since it sometimes reused an older mood.
+
 
 ## Roadmap
 
@@ -181,9 +183,10 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 - [x] **Store fallback:** when no owned game passes the threshold, search SteamSpy and exclude games the user already owns
 - [x] Guardrails for the new path: store results passed to the final pick with their tags, API failures and timeouts handled
 - [x] **Rerank store candidates:** fetch real tag votes for the top 10 (SteamSpy `appdetails`) and score them with `score_game`; if the details calls fail, fall back to the unreranked top 5
-- [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
-- [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
+- [x] **`find_new_games(mood)`** as a second tool: mood → profile from all mood tags → store search and rerank → final pick, with a fixed intro in code
+- [x] **Owned or new:** the library is the default; new-game requests ("something new", "to buy", "don't own") go to the store, guaranteed by a keyword check in code when the model skips the tool
 - [ ] `get_game_details` (short description) from the Steam store; price already comes from SteamSpy
+
 
 ### After v2
 

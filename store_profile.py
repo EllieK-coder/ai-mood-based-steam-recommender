@@ -8,6 +8,7 @@ from store_engine import rank_store, rerank_store
 
 
 MODEL = "qwen2.5:7b"
+DEBUG = False
 
 def find_store_games(profile, owned):
     """Search SteamSpy for the profile's top tags, then rerank the best candidates by their real tags."""
@@ -20,26 +21,33 @@ def find_store_games(profile, owned):
             tag_results[tag] = fetch_tag(tag)
             time.sleep(1)
     except requests.RequestException as error:
-        print("[store] stage 1 failed:", error)  # ✏️
+        if DEBUG:
+            print("[store] stage 1 failed:", error)
         return []
 
     candidates = rank_store(tag_results, profile, owned, top_n=10)
-    print("[store] tags:", top_tags, "| candidates:", len(candidates))  # ✏️
+    if DEBUG:
+        print("[store] tags:", top_tags, "| candidates:", len(candidates))
 
+    # stage 2: real tag votes for the best 10, then rerank
     details = {}
     try:
         for game in candidates:
             details[game["appid"]] = fetch_appdetails(game["appid"]).get("tags")
             time.sleep(1)
     except requests.RequestException as error:
-        print("[store] stage 2 failed:", error)  # ✏️
+        if DEBUG:
+            print("[store] stage 2 failed:", error)
         return candidates[:5]
 
-    for game in candidates:  # ✏️
-        tags = details.get(game["appid"])  # ✏️
-        print("[store]", game["name"], "|", type(tags).__name__, "|", list(tags)[:5] if tags else tags)  # ✏️
+    if DEBUG:
+        for game in candidates:
+            tags = details.get(game["appid"])
+            print("[store]", game["name"], "|", type(tags).__name__, "|", list(tags)[:5] if tags else tags)
 
     return rerank_store(candidates, details, profile)
+
+
 def pick_store_games(mood_text, candidates):
     """Let the LLM suggest 1-2 store games the user doesn't own, using only the given facts."""
     lines = []
@@ -59,10 +67,9 @@ def pick_store_games(mood_text, candidates):
                 "role": "system",
                 "content": (
                     "You help the user find a game to play. "
-                    "Nothing in the user's own Steam library fits their mood, "
-                    "so the games below are from the Steam store and the user does NOT own them. "
-                    "Start by saying briefly that nothing in their library fits, "
-                    "then suggest 1 or 2 of these games as new games to consider, "
+                    "The games below are from the Steam store, and the user does NOT own them. "
+                    "Do not talk about the user's own library. "
+                    "Suggest 1 or 2 of these games as new games to consider, "
                     "with one or two sentences each on why they fit the mood. "
                     "Mention the price. "
                     "Only suggest games from the list. "
