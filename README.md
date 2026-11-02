@@ -93,8 +93,8 @@ The conversation history (`messages` list) is the agent's memory: every user mes
    ```
 2. **Clone the repo and create a virtual environment:**
    ```
-   git clone https://github.com/EllieK-coder/first-ai-agent.git
-   cd first-ai-agent
+   git clone https://github.com/EllieK-coder/ai-mood-based-steam-recommender.git
+   cd ai-mood-based-steam-recommender
    python -m venv .venv
    .venv\Scripts\activate        # Windows
    source .venv/bin/activate     # macOS / Linux
