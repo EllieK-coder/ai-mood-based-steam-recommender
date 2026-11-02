@@ -2,7 +2,7 @@ import json
 
 BACKLOG_MINUTES = 120   # games played less than this count as backlog
 BACKLOG_BONUS = 0.1     # how much extra score backlog games get
-MIN_SCORE = 0.4      # games that match the mood less than this are not recommended
+MIN_SCORE = 0.4     # games that match the mood less than this are not recommended
 EXCLUDE_APPIDS = {1938090}   # launchers and non-games: CHECK this matches "Call of Duty®" in your library.json
 TAGS_TO_MATCH = 3   # a game that strongly matches this many of the mood's tags scores 1.0
 

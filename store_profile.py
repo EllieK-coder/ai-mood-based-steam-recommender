@@ -3,25 +3,43 @@ import time
 import ollama
 import requests
 
-from SteamSpy import fetch_tag
-from store_engine import rank_store
+from SteamSpy import fetch_tag, fetch_appdetails
+from store_engine import rank_store, rerank_store
+
 
 MODEL = "qwen2.5:7b"
 
 def find_store_games(profile, owned):
-    """Search SteamSpy for the profile's top tags and rank games the user doesn't own."""
+    """Search SteamSpy for the profile's top tags, then rerank the best candidates by their real tags."""
     top_tags = sorted(profile, key=profile.get, reverse=True)[:3]
 
+    # stage 1: cheap search by tag
     tag_results = {}
     try:
         for tag in top_tags:
             tag_results[tag] = fetch_tag(tag)
             time.sleep(1)
-    except requests.RequestException:
+    except requests.RequestException as error:
+        print("[store] stage 1 failed:", error)  # ✏️
         return []
 
-    return rank_store(tag_results, profile, owned, top_n=5)
+    candidates = rank_store(tag_results, profile, owned, top_n=10)
+    print("[store] tags:", top_tags, "| candidates:", len(candidates))  # ✏️
 
+    details = {}
+    try:
+        for game in candidates:
+            details[game["appid"]] = fetch_appdetails(game["appid"]).get("tags")
+            time.sleep(1)
+    except requests.RequestException as error:
+        print("[store] stage 2 failed:", error)  # ✏️
+        return candidates[:5]
+
+    for game in candidates:  # ✏️
+        tags = details.get(game["appid"])  # ✏️
+        print("[store]", game["name"], "|", type(tags).__name__, "|", list(tags)[:5] if tags else tags)  # ✏️
+
+    return rerank_store(candidates, details, profile)
 def pick_store_games(mood_text, candidates):
     """Let the LLM suggest 1-2 store games the user doesn't own, using only the given facts."""
     lines = []

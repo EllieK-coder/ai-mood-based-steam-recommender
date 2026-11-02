@@ -166,8 +166,7 @@ def recommend_from_library(mood: str) -> str:
     profile = mood_to_profile(mood, tags)
     if not profile:
         return "I couldn't work out what kind of game fits that mood."
-
-    ranked = rank_library(library, profile)
+    ranked = []   # TEMP: force the store fallback
     if not ranked:
         owned = {game["appid"] for game in raw}
         store = find_store_games(profile, owned)
@@ -177,7 +176,6 @@ def recommend_from_library(mood: str) -> str:
         return intro + pick_store_games(mood, store)
 
     return pick_games(mood, ranked)
-
 if __name__ == "__main__":
     print(recommend_from_library("I had a long day and just want to relax"))
     print(recommend_from_library("I'm so angry I want to smash something"))
