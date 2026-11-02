@@ -172,7 +172,7 @@ The conversation history (`messages` list) is the agent's memory: every user mes
 **Goal:** when nothing you own fits, or when you ask for something new, recommend games from the Steam store that you don't own yet.
 
 - [x] **Store engine:** `fetch_tag` (with timeout) and `rank_store`: search SteamSpy for the profile's top tags, exclude owned games and games with few reviews, rank by tag overlap with rating as tie-breaker (7 tests)
-- [ ] **Store fallback:** when no owned game passes the threshold, use the store engine in `recommend_from_library`, clearly labelled as not in the library
+- [x] **Store fallback:** when no owned game passes the threshold, use the store engine in `recommend_from_library`, with a fixed intro in code saying the games aren't owned
 - [ ] Rerank store candidates: fetch real tag votes for the top 10 (SteamSpy `appdetails`) and score them with `score_game`, so weakly tagged games drop
 - [ ] **`find_new_games(mood)`** as a second tool, reusing the mood profile
 - [ ] **Owned or new:** ask "a game you own, or something new?" only when the user hasn't said; default to the library
